@@ -2,9 +2,11 @@ import settings
 import pymongo
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
+from logger import Logger
 
 DB_NAME = "PatientPal"
 DB_URL = f"mongodb+srv://{settings.DB_USERNAME}:{settings.DB_PASSWORD}@patientpal.awkaqvw.mongodb.net/?retryWrites=true&w=majority&appName=PatientPal"
+logger = Logger("MongoDB")
 
 class MongoDBInterface:
     def __init__(self):
@@ -14,118 +16,127 @@ class MongoDBInterface:
     # Connect to the MongoDB database
     def connect(self):
         try:
-            self.client = MongoClient(DB_URL)
+            logger.debug(f"Connecting to DB {DB_NAME}...")
+            self.client = MongoClient(DB_URL, serverSelectionTimeoutMS=60000, connectTimeoutMS=60000)
             self.db = self.client[DB_NAME]
-            print(f"Successfully connected to {DB_NAME} database.")
+            logger.info(f"Successfully connected to {DB_NAME} database.")
         except ConnectionFailure as e:
-            print(f"Could not connect to MongoDB. Error: {e}")
+            logger.critical(f"Could not connect to MongoDB. Error: {e}")
             raise
 
     # List all collections in the database
     def list_collections(self):
-        if self.db is not None:
+        def list_collections_action():
+            logger.debug("Fetching all collections from the database.")
             return self.db.list_collection_names()
-        else:
-            raise ConnectionFailure("Not connected to the database.")
+        return self.__perform_db_action(list_collections_action)
 
     # Add a document to a collection
     def add_document(self, collection_name, document):
-        if self.db is not None:
+        def add_document_action(collection_name, document):
+            logger.debug(f"Adding document to collection {collection_name}: {document}")
             collection = self.db[collection_name]
             result = collection.insert_one(document)
-            print(f"Document added with _id: {result.inserted_id}")
+            logger.info(f"Document added with _id: {result.inserted_id}")
             return result.inserted_id
-        else:
-            raise ConnectionFailure("Not connected to the database.")
-        
+        return self.__perform_db_action(add_document_action, collection_name, document)
+
     # Add multiple documents to a collection
     def add_documents(self, collection_name, documents):
-        if self.db is not None:
+        def add_documents_action(collection_name, documents):
+            logger.debug(f"Adding multiple documents to collection {collection_name}.")
             collection = self.db[collection_name]
             result = collection.insert_many(documents)
-            print(f"{len(result.inserted_ids)} documents added.")
+            logger.info(f"{len(result.inserted_ids)} documents added.")
             return result.inserted_ids
-        else:
-            raise ConnectionFailure("Not connected to the database.")
+        return self.__perform_db_action(add_documents_action, collection_name, documents)
 
     # Get a document from a collection with an optional filter
     def get_document(self, collection_name, filter=None):
-        if self.db is not None:
+        def get_document_action(collection_name, filter):
+            logger.debug(f"Fetching document from collection {collection_name} with filter {filter}.")
             collection = self.db[collection_name]
-            if filter:
-                result = collection.find_one(filter)
-            else:
-                result = collection.find_one()
+            result = collection.find_one(filter) if filter else collection.find_one()
+            logger.info(f"Fetched document: {result}")
             return result
-        else:
-            raise ConnectionFailure("Not connected to the database.")
-        
+        return self.__perform_db_action(get_document_action, collection_name, filter)
+
     # Get multiple documents from a collection with an optional filter
     def get_documents(self, collection_name, filter=None):
-        if self.db is not None:
+        def get_documents_action(collection_name, filter):
+            logger.debug(f"Fetching multiple documents from collection {collection_name} with filter {filter}.")
             collection = self.db[collection_name]
-            if filter:
-                result = collection.find(filter)
-            else:
-                result = collection.find()
-            return list(result)  # Convert the cursor to a list to return all documents
-        else:
-            raise ConnectionFailure("Not connected to the database.")
-        
+            result = collection.find(filter) if filter else collection.find()
+            result_list = list(result)
+            logger.info(f"Fetched documents: {result_list}")
+            return  result_list # Convert the cursor to a list to return all documents
+        return self.__perform_db_action(get_documents_action, collection_name, filter)
+
     # Update a single document in a collection with an optional filter and update parameters
     def update_document(self, collection_name, filter, update_data, upsert=False):
-        if self.db is not None:
+        def update_document_action(collection_name, filter, update_data, upsert):
+            logger.debug(f"Updating document in collection {collection_name} with filter {filter} and update data {update_data}.")
             collection = self.db[collection_name]
             result = collection.update_one(filter, {'$set': update_data}, upsert=upsert)
             if result.matched_count > 0:
-                print(f"Document updated, matched {result.matched_count} document(s).")
+                logger.info(f"Document updated, matched {result.matched_count} document(s).")
             elif result.upserted_id:
-                print(f"Document inserted (upsert), new _id: {result.upserted_id}")
+                logger.info(f"Document inserted (upsert), new _id: {result.upserted_id}")
             else:
-                print("No matching document found.")
+                logger.info("No matching document found.")
             return result
-        else:
-            raise ConnectionFailure("Not connected to the database.")
+        return self.__perform_db_action(update_document_action, collection_name, filter, update_data, upsert)
 
     # Update multiple documents in a collection with an optional filter and update parameters
     def update_documents(self, collection_name, filter, update_data, upsert=False):
-        # upsert parameter allows creating a new document if no matching document is found
-        if self.db is not None:
+        def update_documents_action(collection_name, filter, update_data, upsert):
+            logger.debug(f"Updating multiple documents in collection {collection_name} with filter {filter} and update data {update_data}.")
             collection = self.db[collection_name]
             result = collection.update_many(filter, {'$set': update_data}, upsert=upsert)
-            print(f"{result.modified_count} documents updated.")
+            logger.debug(f"Update result: Matched {result.matched_count}, Modified {result.modified_count}")
+            logger.info(f"{result.modified_count} documents updated.")
             return result
-        else:
-            raise ConnectionFailure("Not connected to the database.")
+        return self.__perform_db_action(update_documents_action, collection_name, filter, update_data, upsert)
 
     # Delete a single document from a collection with a filter
     def delete_document(self, collection_name, filter):
-        if self.db is not None:
+        def delete_document_action(collection_name, filter):
+            logger.debug(f"Deleting document from collection {collection_name} with filter {filter}.")
             collection = self.db[collection_name]
             result = collection.delete_one(filter)
             if result.deleted_count > 0:
-                print(f"Document deleted, deleted {result.deleted_count} document(s).")
+                logger.info(f"Document deleted, deleted {result.deleted_count} document(s).")
             else:
-                print("No matching document found.")
+                logger.info("No matching document found.")
             return result
-        else:
-            raise ConnectionFailure("Not connected to the database.")
+        return self.__perform_db_action(delete_document_action, collection_name, filter)
 
     # Delete multiple documents from a collection with a filter
     def delete_documents(self, collection_name, filter):
-        if self.db is not None:
+        def delete_documents_action(collection_name, filter):
+            logger.debug(f"Deleting multiple documents from collection {collection_name} with filter {filter}.")
             collection = self.db[collection_name]
             result = collection.delete_many(filter)
             if result.deleted_count > 0:
-                print(f"{result.deleted_count} documents deleted.")
+                logger.info(f"{result.deleted_count} documents deleted.")
             else:
-                print("No matching documents found.")
+                logger.info("No matching documents found.")
             return result
+        return self.__perform_db_action(delete_documents_action, collection_name, filter)
+
+    # Perform the database action (invoking the provided action function)
+    def __perform_db_action(self, action, *args):
+        if self.db is not None:
+            logger.debug(f"Executing database action with arguments: {args}")
+            return action(*args)  # Pass the arguments to the action method
         else:
+            logger.error("Database not connected")
             raise ConnectionFailure("Not connected to the database.")
+
+
         
 """
-Block of code to test the above functions
+# Block of code to test the above functions
 if __name__ == "__main__":
     db_interface = MongoDBInterface()
     db_interface.connect()
@@ -166,5 +177,5 @@ if __name__ == "__main__":
 
     # Delete multiple documents
     delete_filter = {"age": {"$lt": 30}}  # Delete users younger than 30
-    db_interface.delete_documents("users", delete_filter)"
+    db_interface.delete_documents("users", delete_filter)
 """
