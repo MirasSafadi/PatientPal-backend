@@ -1,0 +1,5 @@
+DB_NAME = "PatientPal"
+COLLECTION_USERS = "users"
+COLLECTION_APPOINTMENTS = "appointments"
+COLLECTION_CHAT_HISTORY = "chat_history"
+COLLECTION_SERVICES = "services"
