@@ -5,3 +5,5 @@
 3. Install dependencies <code>pip install -r requirements.txt</code>
 4. Set the required env variables: FLASK_APP=app, FLASK_ENV=development
 5. Run the app <code>flask run</code> (add <code>--debug</code> to run in debug mode)
+### Important Notes:
+1. Please put your virtual environment in the .gitignore file.
