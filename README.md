@@ -7,3 +7,4 @@
 5. Run the app <code>flask run</code> (add <code>--debug</code> to run in debug mode)
 ### Important Notes:
 1. Please put your virtual environment in the .gitignore file.
+2. 
