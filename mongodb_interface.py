@@ -3,9 +3,9 @@ import pymongo
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from logger import Logger
+import constants
 
-DB_NAME = "PatientPal"
-DB_URL = f"mongodb+srv://{settings.DB_USERNAME}:{settings.DB_PASSWORD}@patientpal.awkaqvw.mongodb.net/?retryWrites=true&w=majority&appName=PatientPal"
+DB_URL = f"mongodb+srv://{settings.DB_USERNAME}:{settings.DB_PASSWORD}@patientpal.awkaqvw.mongodb.net/?retryWrites=true&w=majority&appName={constants.DB_NAME}"
 logger = Logger("MongoDB")
 
 class MongoDBInterface:
@@ -16,13 +16,13 @@ class MongoDBInterface:
     # Connect to the MongoDB database
     def connect(self):
         try:
-            logger.debug(f"Connecting to DB {DB_NAME}...")
-            self.client = MongoClient(DB_URL, serverSelectionTimeoutMS=60000, connectTimeoutMS=60000)
-            self.db = self.client[DB_NAME]
-            logger.info(f"Successfully connected to {DB_NAME} database.")
+            logger.debug(f"Connecting to DB {constants.DB_NAME}...")
+            self.client = MongoClient(DB_URL, serverSelectionTimeoutMS=120000, connectTimeoutMS=120000)
+            self.db = self.client[constants.DB_NAME]
+            logger.info(f"Successfully connected to {constants.DB_NAME} database.")
         except ConnectionFailure as e:
             logger.critical(f"Could not connect to MongoDB. Error: {e}")
-            raise
+            raise e
 
     # List all collections in the database
     def list_collections(self):
@@ -134,9 +134,9 @@ class MongoDBInterface:
             raise ConnectionFailure("Not connected to the database.")
 
 
-        
-"""
+"""        
 # Block of code to test the above functions
+import logging
 if __name__ == "__main__":
     db_interface = MongoDBInterface()
     db_interface.connect()
