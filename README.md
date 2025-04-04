@@ -4,3 +4,6 @@
 2. Create a virtual environment <code>python -m venv virtualEnvName</code> then activate it <code>./virtualEnvName/Scripts/activate</code>.
 3. Install dependencies <code>pip install -r requirements.txt</code>
 4. Run the app <code>flask run</code> (add <code>--debug</code> to run in debug mode)
+### Important Notes:
+1. Please put your virtual environment in the .gitignore file.
+
