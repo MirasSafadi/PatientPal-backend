@@ -1,11 +1,14 @@
 import logging
 from logging.handlers import RotatingFileHandler
+import settings
 
+debug = settings.IS_DEBUG
 class Logger:
     def __init__(self,module):
         self.module = module
         self.logger = logging.getLogger(module)
-        self.logger.setLevel(logging.DEBUG)
+        self.level = logging.DEBUG if debug else logging.INFO
+        self.logger.setLevel(self.level)
         self.__initialize()
         
 
@@ -14,11 +17,11 @@ class Logger:
         # initialize rotating file handler
         rotating_file_handler = RotatingFileHandler(f'logs/{self.module}.log', maxBytes=2000, backupCount=3) # logs to a file
         rotating_file_handler.setFormatter(format)
-        rotating_file_handler.setLevel(logging.DEBUG)
+        rotating_file_handler.setLevel(self.level)
         # initialize console handler
         console_handler = logging.StreamHandler() # logs to the console
         console_handler.setFormatter(format)
-        console_handler.setLevel(logging.DEBUG)
+        console_handler.setLevel(self.level)
 
         self.logger.addHandler(console_handler)
         self.logger.addHandler(rotating_file_handler)
@@ -26,6 +29,17 @@ class Logger:
         logging.getLogger("requests").setLevel(logging.WARN)
         logging.getLogger("pymongo").setLevel(logging.WARN)
         logging.getLogger("flask").setLevel(logging.WARN)
+
+    def __update_handlers_level(self):
+        """Update the level of all handlers to match the current logger level."""
+        for handler in self.logger.handlers:
+            handler.setLevel(self.level)
+    
+    def set_level(self, level):
+        """Set the logging level and update the handlers."""
+        self.level = level
+        self.logger.setLevel(level)  # Update the logger level
+        self.__update_handlers_level()  # Update the level for all handlers
         
     def info(self,message):
         self.logger.info(message)
