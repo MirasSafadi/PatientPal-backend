@@ -1,28 +1,46 @@
 import settings
-import pymongo
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from logger import Logger
+import constants
 
-DB_NAME = "PatientPal"
-DB_URL = f"mongodb+srv://{settings.DB_USERNAME}:{settings.DB_PASSWORD}@patientpal.awkaqvw.mongodb.net/?retryWrites=true&w=majority&appName=PatientPal"
+DB_URL = f"mongodb+srv://{settings.DB_USERNAME}:{settings.DB_PASSWORD}@patientpal.awkaqvw.mongodb.net/?retryWrites=true&w=majority&appName={constants.DB_NAME}"
 logger = Logger("MongoDB")
 
 class MongoDBInterface:
+    _instance = None  # Class-level variable to hold the singleton instance
+
+    def __new__(cls, *args, **kwargs):
+        """Override __new__ to ensure only one instance is created."""
+        if cls._instance is None:
+            logger.debug("Creating a new instance of MongoDBInterface.")
+            cls._instance = super(MongoDBInterface, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
-        self.client = None
-        self.db = None
+        """Initialize the MongoDBInterface instance."""
+        if not hasattr(self, "initialized"):  # Ensure __init__ runs only once
+            logger.debug("Initializing MongoDBInterface singleton instance.")
+            self.client = None
+            self.db = None
+            self.initialized = True  # Mark as initialized
 
     # Connect to the MongoDB database
     def connect(self):
+        logger.debug("Checking existing connection to MongoDB...")
+        if self.client is not None:
+            logger.debug("Already connected to MongoDB.")
+            return
+        logger.debug("No existing connection found. Establishing a new connection...")
+        # Attempt to connect to the MongoDB server
         try:
-            logger.debug(f"Connecting to DB {DB_NAME}...")
-            self.client = MongoClient(DB_URL, serverSelectionTimeoutMS=60000, connectTimeoutMS=60000)
-            self.db = self.client[DB_NAME]
-            logger.info(f"Successfully connected to {DB_NAME} database.")
+            logger.debug(f"Connecting to DB {constants.DB_NAME}...")
+            self.client = MongoClient(DB_URL, serverSelectionTimeoutMS=120000, connectTimeoutMS=120000)
+            self.db = self.client[constants.DB_NAME]
+            logger.info(f"Successfully connected to {constants.DB_NAME} database.")
         except ConnectionFailure as e:
             logger.critical(f"Could not connect to MongoDB. Error: {e}")
-            raise
+            raise e
 
     # List all collections in the database
     def list_collections(self):
@@ -134,9 +152,9 @@ class MongoDBInterface:
             raise ConnectionFailure("Not connected to the database.")
 
 
-        
-"""
+"""        
 # Block of code to test the above functions
+import logging
 if __name__ == "__main__":
     db_interface = MongoDBInterface()
     db_interface.connect()

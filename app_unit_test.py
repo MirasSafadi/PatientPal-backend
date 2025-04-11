@@ -1,11 +1,11 @@
 import unittest
 from flask import Flask, jsonify
-from app import app  # Replace with your actual Flask app instance
+from app import flask_app  # Replace with your actual Flask app instance
 
 class TestApp(unittest.TestCase):
 
     def setUp(self):
-        self.app = app.test_client()
+        self.app = flask_app.test_client()
         self.app.testing = True
 
     def test_index(self):
