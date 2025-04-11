@@ -13,3 +13,6 @@ LOG_LEVEL_DEBUG         = logging.DEBUG
 LOG_LEVEL_INFO          = logging.INFO
 TRUE                    = "True"
 FALSE                   = "False"
+CONFIRM_SECRET_KEY = "CONFIRM_SECRET_KEY"
+MAIL_USERNAME ="MAIL_USERNAME"
+MAIL_PASSWORD = "MAIL_PASSWORD"
