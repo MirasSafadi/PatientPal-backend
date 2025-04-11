@@ -7,7 +7,6 @@ from app import flask_app, bcrypt
 # Initialize database connection
 db_instance = MongoDBInterface()
 db_instance.connect()
-
 logger = Logger("routes")
 
 
@@ -34,6 +33,14 @@ def login():
 
         logger.debug(f"Login attempt with username: {username}")
 
+@flask_app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get('username', '').strip()
+    email = data.get('email', '').strip().lower()
+    password = data.get('password')
+    confirm_password = data.get('confirm_password')
+
         # חיפוש המשתמש במסד הנתונים
         user = db_instance.get_document("users", {"username": username})
 
@@ -50,5 +57,41 @@ def login():
 
         logger.warning(f"User '{username}' login attempt failed.")
         return jsonify({"message": "login attempt failed."}), 404
-
     return jsonify({"error": "Wrong method"}), 405
+
+
+    #inserted_id = db_interface.add_document("users", user)
+
+    #return jsonify({ "msg": "User registered", "id": str(inserted_id) }), 201
+    return  jsonify({
+        'message': 'A confirmation email has been sent. Please confirm your registration.',
+        'code': 200,
+    }), 200
+@flask_app.route('/confirm/<token>')
+def confirm_registration(token):
+    data = utils.confirm_token(token)
+    if not data:
+        return jsonify({'message': 'The confirmation link is invalid or has expired.', 'code': 400}), 400
+    user = {
+        "username": data['username'],
+        "email": data['email'],
+        "password": data['password'],
+        "profile": {
+            "first_name": data['profile']['first_name'],
+            "last_name": data['profile']['last_name'],
+            "phone": data['profile']['phone'],
+            "birthdate": data['profile']['birthdate'],
+            "gender": data['profile']['gender'],
+            "address": data['profile']['address']
+        }
+    }
+     # Check if user already exists
+    filter_criteria_username =  {"username": user['username'] }
+    filter_criteria_email =  {"email": user['email']}
+    if db_instance.get_document("users", filter_criteria_username) or db_instance.get_document("users", filter_criteria_email) : #checking if the user exist
+        return jsonify({ "msg": "User already exists" }), 400
+
+
+    # Create new user
+    inserted_id = db_instance.add_document("users", user)
+    return jsonify({ "msg": "User registered", "id": str(inserted_id) }), 201
