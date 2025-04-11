@@ -15,8 +15,7 @@ import smtplib
 # Initialize database connection
 db_instance = MongoDBInterface()
 db_instance.connect()
-bcrypt = Bcrypt(app)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+bcrypt = Bcrypt(flask_app)
 logger = Logger("routes")
 
 
@@ -31,13 +30,7 @@ def ping():
     logger.debug("Ping endpoint (/ping) called")
     return '<h1>Pong</h1>'
 
-
-@app.route('/')
-def hello():
-    logger.debug("root enpoint (/) called")
-    return '<h1>Hello, World!</h1>'
-
-@app.route('/register', methods=['POST'])
+@flask_app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
     username = data.get('username', '').strip()
@@ -100,7 +93,7 @@ def register():
         'message': 'A confirmation email has been sent. Please confirm your registration.',
         'code': 200,
     }), 200
-@app.route('/confirm/<token>')
+@flask_app.route('/confirm/<token>')
 def confirm_registration(token):
     data = utils.confirm_token(token)
     if not data:
