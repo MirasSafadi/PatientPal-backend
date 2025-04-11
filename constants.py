@@ -2,6 +2,7 @@ import logging
 
 DB_PASSWORD             = "DB_PASSWORD"
 DB_USERNAME             = "DB_USERNAME"
+JWT_SECRET              = "JWT_SECRET"
 DB_NAME                 = "PatientPal"
 IS_DEBUG               = "IS_DEBUG"
 COLLECTION_USERS        = "users"

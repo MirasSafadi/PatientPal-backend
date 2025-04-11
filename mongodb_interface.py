@@ -1,5 +1,4 @@
 import settings
-import pymongo
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from logger import Logger
@@ -9,12 +8,31 @@ DB_URL = f"mongodb+srv://{settings.DB_USERNAME}:{settings.DB_PASSWORD}@patientpa
 logger = Logger("MongoDB")
 
 class MongoDBInterface:
+    _instance = None  # Class-level variable to hold the singleton instance
+
+    def __new__(cls, *args, **kwargs):
+        """Override __new__ to ensure only one instance is created."""
+        if cls._instance is None:
+            logger.debug("Creating a new instance of MongoDBInterface.")
+            cls._instance = super(MongoDBInterface, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
-        self.client = None
-        self.db = None
+        """Initialize the MongoDBInterface instance."""
+        if not hasattr(self, "initialized"):  # Ensure __init__ runs only once
+            logger.debug("Initializing MongoDBInterface singleton instance.")
+            self.client = None
+            self.db = None
+            self.initialized = True  # Mark as initialized
 
     # Connect to the MongoDB database
     def connect(self):
+        logger.debug("Checking existing connection to MongoDB...")
+        if self.client is not None:
+            logger.debug("Already connected to MongoDB.")
+            return
+        logger.debug("No existing connection found. Establishing a new connection...")
+        # Attempt to connect to the MongoDB server
         try:
             logger.debug(f"Connecting to DB {constants.DB_NAME}...")
             self.client = MongoClient(DB_URL, serverSelectionTimeoutMS=120000, connectTimeoutMS=120000)

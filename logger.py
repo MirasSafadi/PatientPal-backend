@@ -58,6 +58,7 @@ class Logger:
 
 """
 Example usage (in another file):
+from logger import Logger
 logger = Logger("app")
 
 logger.debug("This is a debug message")
