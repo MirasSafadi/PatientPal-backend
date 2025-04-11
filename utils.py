@@ -39,7 +39,7 @@ def get_utc_now_plus_24_hours():
     return unix_timestamp
 
 
-s = URLSafeTimedSerializer(settings.SECRET_KEY)
+s = URLSafeTimedSerializer(settings.CONFIRM_SECRET_KEY)
 # Email validation
 def is_valid_email(email):
     pattern = r'^[\w\.-]+@[\w\.-]+\.\w{2,}$'
