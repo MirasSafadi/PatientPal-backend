@@ -1,12 +1,15 @@
+from gevent import monkey # Import gevent monkey patching
+monkey.patch_all()  # Monkey-patch for compatibility
+
 from flask import Flask
-import click
+from flask_bcrypt import Bcrypt
+from flask_socketio import SocketIO, emit
+from flask_cors import CORS
+
 from logger import Logger
 from dotenv import load_dotenv
-from mongodb_interface import MongoDBInterface
-import os
-import sys
-import constants
-import settings
+import os,sys
+
 
 # Initialize logger
 logger = Logger("app")
@@ -16,7 +19,12 @@ logger.debug("Importing settings")
 load_dotenv()
 
 # Initialize Flask app
-app = Flask(__name__)
+flask_app = Flask(__name__)
+CORS(flask_app)  # Enable CORS for all routes
+socketio = SocketIO(flask_app, cors_allowed_origins='*')
+bcrypt = Bcrypt(flask_app)
+
+import routes, socketIO  # Import routes and socketIO after Flask app initialization
 
 # Check for debug mode in command-line arguments
 debug = False
@@ -25,21 +33,10 @@ if '--debug' in sys.argv:
     os.environ["IS_DEBUG"] = "True"
 logger.info(f"Debug mode is {'active' if debug else 'inactive'}")
 
-# Initialize database connection
-db_instance = MongoDBInterface()
-db_instance.connect()
-
-@app.route('/')
-def hello():
-    logger.debug("Root endpoint (/) called")
-    return '<h1>Hello, World!</h1>'
-
 if __name__ == "__main__":
     # Check for debug mode again when running the app
     if '--debug' in sys.argv:
         debug = True
         os.environ["IS_DEBUG"] = "True"
     logger.info(f"Debug mode is {'active' if debug else 'inactive'}")
-    
-    # Run the Flask app
-    app.run(debug=debug)
+    socketio.run(flask_app, debug=debug)
