@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import request, jsonify
 import click
 from logger import Logger
 from dotenv import load_dotenv
@@ -43,3 +44,36 @@ if __name__ == "__main__":
     
     # Run the Flask app
     app.run(debug=debug)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    logger.debug("Login endpoint (/login) called")
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        logger.debug(f"Login attempt with username: {username}")
+
+        # חיפוש המשתמש במסד הנתונים
+        user = db_instance.get_document("users", {"username": username})
+
+        if user:
+            if user.get("password") == password:
+                logger.info(f"User '{username}' logged in successfully.")
+                return jsonify({"message": "Login successful!"}), 200
+            else:
+                logger.warning(f"Invalid password for user '{username}'.")
+                return jsonify({"message": "Invalid password."}), 401
+        else:
+            logger.warning(f"User '{username}' not found.")
+            return jsonify({"message": "User not found."}), 404
+
+    # GET – החזרת טופס התחברות
+    return '''
+        <form method="post">
+            Username: <input type="text" name="username"/><br/>
+            Password: <input type="password" name="password"/><br/>
+            <input type="submit" value="Login"/>
+        </form>
+    '''
