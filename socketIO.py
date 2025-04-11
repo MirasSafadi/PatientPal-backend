@@ -1,5 +1,3 @@
-from email import message
-from math import log
 from crypto import auth_required
 from mongodb_interface import MongoDBInterface
 from logger import Logger
