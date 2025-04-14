@@ -17,7 +17,7 @@ jobs:
 
     runs-on: ubuntu-latest
     env:  # Add environment variables here
-      CONFIRM_SECRET_KEY: "5e6dff1ba49625079270573eb7a3437800ff54118374d961fefb2f651c7d5bc0"
+      CONFIRM_SECRET_KEY: ${{ secrets.CONFIRM_SECRET_KEY }}
 
     steps:
     - uses: actions/checkout@v4
