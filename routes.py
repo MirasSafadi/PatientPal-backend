@@ -1,8 +1,8 @@
-from flask import jsonify, request
+from flask import jsonify, request 
 from crypto import auth_required, generate_token
 from mongodb_interface import MongoDBInterface
 from logger import Logger
-from app import flask_app,bcrypt
+from app import flask_app, bcrypt
 
 # Initialize database connection
 db_instance = MongoDBInterface()
@@ -29,9 +29,8 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if username is None or password is None :
-            return jsonify({"error": "bad request"}),400
-        
+        if username is None or password is None:
+            return jsonify({"error": "bad request"}), 400
 
         logger.debug(f"Login attempt with username: {username}")
 
@@ -42,9 +41,14 @@ def login():
             if bcrypt.check_password_hash(pw_hash=user.get("password"), password=password):
                 logger.info(f"User '{username}' logged in successfully.")
                 token = generate_token({"username": username, "password": user.get("password")})
-                # hash the token and save in db
+                
+                # 🔒 hash the token and save in db
+                hashed_token = bcrypt.generate_password_hash(token).decode('utf-8')
+                db_instance.update_document("users", {"username": username}, {"session_token": hashed_token})
+
                 return jsonify({"message": "Login successful", "token": token}), 200
+
         logger.warning(f"User '{username}' login attempt failed.")
         return jsonify({"message": "login attempt failed."}), 404
-    return jsonify({"error": "Wrong method"}), 405
 
+    return jsonify({"error": "Wrong method"}), 405
