@@ -120,4 +120,4 @@ def generate_token(payload: dict):
     # Add the expiration time to the payload
     payload['exp'] = expiration
     token = jwt.encode(payload, settings.JWT_SECRET, algorithm='HS256')
-    return token
+    return token.encode('utf-8')  # Decode the token to a string for easier handling

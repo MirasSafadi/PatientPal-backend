@@ -5,7 +5,7 @@ import jwt
 import settings
 import utils
 
-class TestApp(unittest.TestCase):
+class CryptoTest(unittest.TestCase):
 
     def setUp(self):
         self.logger = Logger("test_logger")
