@@ -29,8 +29,10 @@ def auth_required(func):
 
         token = request.headers.get("Authorization") # Authorization: Bearer <token>
         username = request.headers.get("Username") # Username: <username>
+        logger.debug(f"Token: {token}, Username: {username}")
 
         if username is None or token is None:
+            logger.debug("Username or token is missing")
             if is_socketio:
                 emit('error', {"error": "Unauthorized"}, broadcast=False)
                 disconnect()
@@ -40,6 +42,7 @@ def auth_required(func):
         
         #validate the token
         if not validate_token(token):
+            logger.debug("Token is invalid or expired")
             if is_socketio:
                 emit('error', {"error": "Invalid or expired token"}, broadcast=False)
                 disconnect()
@@ -51,6 +54,7 @@ def auth_required(func):
         # Fetch user from the database
         user = db_instance.get_document("users", {"username": username})
         if user is None:
+            logger.debug("User not found in the database")
             if is_socketio:
                 emit('error', {"error": "Not Found: No such user"}, broadcast=False)
                 disconnect()
@@ -60,6 +64,7 @@ def auth_required(func):
 
         # Compare the token with the stored hashed token
         if not bcrypt.check_password_hash(pw_hash=user.get("hashed_token"), password=token):
+            logger.debug("Token does not match the stored hashed token")
             if is_socketio:
                 emit('error', {"error": "Unauthorized"}, broadcast=False)
                 disconnect()
