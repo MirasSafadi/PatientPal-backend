@@ -1,9 +1,9 @@
+from flask_socketio import SocketIO
 from gevent import monkey # Import gevent monkey patching
 monkey.patch_all()  # Monkey-patch for compatibility
 
 from flask import Flask
 from flask_bcrypt import Bcrypt
-from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
 from logger import Logger

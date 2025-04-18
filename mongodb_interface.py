@@ -178,6 +178,11 @@ if __name__ == "__main__":
     filter_criteria = {"name": "John Doe"}
     document = db_interface.get_document("users", filter_criteria)
     print("Document fetched:", document)
+    
+    # Get a document with an optional filter
+    filter_criteria = {"age": {"$lt": 30}}
+    documents = db_interface.get_documents("users", filter_criteria)
+    print("Documents fetched:", documents)
 
     # Update a document
     update_data = {"age": 31}
