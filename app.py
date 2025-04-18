@@ -1,9 +1,9 @@
+from flask_socketio import SocketIO
 from gevent import monkey # Import gevent monkey patching
 monkey.patch_all()  # Monkey-patch for compatibility
 
 from flask import Flask
 from flask_bcrypt import Bcrypt
-from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
 from logger import Logger
@@ -21,7 +21,7 @@ load_dotenv()
 # Initialize Flask app
 flask_app = Flask(__name__)
 CORS(flask_app)  # Enable CORS for all routes
-socketio = SocketIO(flask_app, cors_allowed_origins='*')
+socketio = SocketIO(flask_app, cors_allowed_origins='*', async_mode='gevent')
 bcrypt = Bcrypt(flask_app)
 
 import routes, socketIO  # Import routes and socketIO after Flask app initialization
