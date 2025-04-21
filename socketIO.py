@@ -2,7 +2,7 @@ from crypto import auth_required
 from mongodb_interface import MongoDBInterface
 from logger import Logger
 from app import socketio
-from flask_socketio import emit, join_room
+from flask_socketio import join_room
 from flask import request
 import constants
 
