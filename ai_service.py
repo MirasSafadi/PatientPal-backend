@@ -1,91 +1,155 @@
-"""
-    This Module contains the AI service for the application.
-    It includes the AI service class, which is responsible for handling the AI-related tasks.
-    This service will utilize the GEMINI_API_KEY for AI functionalities.
-    The AI service will be used to interact with the AI model and perform various tasks such as generating responses, etc.
-    The AI service will be used in the socketIO.py file to handle the AI-related requests in the chat.
-"""
-from logger import Logger
-import settings, constants, json, requests
-from pprint import pprint
+import google.generativeai as genai
+import settings
 
-logger = Logger("ai_service_logger")
+class GeminiAPIWrapper:
+    """
+    A wrapper class for interacting with the Google Gemini API.
+    """
+    def __init__(self, api_key=None, model_name="gemini-pro", system_instruction=None, username=None):
+        """
+        Initializes the GeminiAPIWrapper.
 
-AI_REQUEST_URL  = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={settings.GEMINI_API_KEY}"
-REQUEST_BODY = """
-{
-    "contents": [
-        {
-            "parts": [
-                {
-                    "text": "Explain how AI works"
-                }
-            ]
-        }
-    ]
-}
-"""
-PROMPT_TEMPLATE = '''
-    You are a helpful assistant helping people manage their appointments in a hostpital. Your task is to assist the user with their queries.
-    Once the user asks a question, you will analyze their query, classify it into one of the following categories: 
-    CREATE_APPOINTMENT, CANCEL_APPOINTMENT, RESCHEDULE_APPOINTMENT, GET_APPOINTMENT_DETAILS, GET_DOCTOR_DETAILS, 
-    GET_HOSPITAL_DETAILS, GET_PATIENT_DETAILS, GET_SERVICES, GET_NEXT_AVAILABLE_TIMESLOT_FOR_APPOINTMENT, .
-    
-    After classifying the query, a function will run to execute the requested operation, so you will also need to provide a list of arguments.
-    You will then generate a human readable response based on the user's query and the category it belongs to.
-    The user will not always give you all the information you need, so you will need to ask them for any missing information. 
-    Only once you have all the necessary information, you will execute the function and provide a response like the format below.
+        Args:
+            api_key (str, optional): Your Google Gemini API key.
+                Defaults to the 'GEMINI_API_KEY' environment variable.
+            model_name (str, optional): The name of the Gemini model to use.
+                Defaults to "gemini-pro".
+            system_instruction (str, optional): A default system instruction (persona)
+                to use for all queries.  Can be overridden in the query() method.
+                Defaults to None.
+        """
+        self.api_key = api_key or settings.GEMINI_API_KEY
+        if not self.api_key:
+            raise ValueError(
+                "API key not provided. Set the 'GEMINI_API_KEY' "
+                "environment variable or pass it during initialization."
+            )
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel(model_name)
+        self.system_instruction = system_instruction  # Default system instruction
+        self.username = username  # Optional username for user-specific sessions
+        self.chat_sessions = {}  # To store chat history per session
 
-    If you do not have all the information you need, you will ask the user for the missing information and provide a response in the following format:
-    {{
-        "category": "INCOMPLETE",
-        "response": "<your follow up question>"
-    }}
-    Do as many follow up questions as you need to get all the information you need.
-    Once the user provides the missing information, you will reclassify the query and provide a response in the format below.
-    if the user query is not clear or does not belong to any of the categories, you will ask them to rephrase their query or provide more information.
+    def query(
+        self,
+        prompt,
+        context=None,
+        persona=None,
+        generation_config=None,
+        format_spec=None  # Added format_spec
+    ):
+        """
+        Sends a query to the Gemini API.
 
-    Your final response should be in a JSON format with the following structure:
-    {{
-        "category": "<category>",
-        "args": {{
-            "arg1": "<value1>",
-            "arg2": "<value2>"
-        }},
-        "response": "<human_readable_response>"
-    }}
+        Args:
+            prompt (str): The user's query.
+            context (list, optional): A list of previous messages in the conversation
+                (as dictionaries with 'role' and 'parts'). Defaults to None.
+            persona (str, optional): A system instruction defining the model's
+                persona or behavior for this query. Overrides the default
+                system_instruction. Defaults to None.
+            generation_config (genai.types.GenerationConfig, optional):
+                Configuration options for content generation.
+                Defaults to None.
+            format_spec (str, optional): Instructions on the desired output format
+                (e.g., "Return in JSON format", "Return as a comma-separated list").
+                This is appended to the prompt.
 
-    Example:
-    User: I want to book an appointment with Dr. Smith for Cardiology next week.
-    Assistant: 
-    {{
-        "category": "GET_NEXT_AVAILABLE_TIMESLOT_FOR_APPOINTMENT",
-        "args": {{
-            "doctor_name": "Dr. Smith",
-            "specialty": "Cardiology"
-        }},
-        "response": "Sure! I can help you with that. Here are some available time slots for an appointment with Dr. Smith in Cardiology next week: [list of time slots]. Please let me know which one works for you."
-    }}
+        Returns:
+            str: The text response from the Gemini API, or None on error.
+        """
+        messages = []
+        if context:
+            messages.extend(context)
+        # Incorporate format spec into the prompt
+        effective_prompt = prompt
+        if format_spec:
+            effective_prompt += f" {format_spec}"
+        messages.append({"role": "user", "parts": [effective_prompt]})
 
-    User: {user_query}
-'''
+        # Use provided persona, or default if available
+        effective_persona = persona if persona is not None else self.system_instruction
 
-class AIService:
-    def __init__(self):
-        pass
+        config = generation_config or genai.types.GenerationConfig()  # Get a mutable copy
+        if effective_persona:
+            config.system_instruction = effective_persona
 
-    def generate_content(self, prompt):
-        request_body = json.loads(REQUEST_BODY)
-        request_body["contents"][0]["parts"][0]["text"] = prompt
-        response = requests.post(
-            AI_REQUEST_URL,
-            json=request_body,
-        )
-        return response.json()
+        try:
+            response = self.model.generate_content(messages, generation_config=config)
+            return response.text
+        except Exception as e:
+            print(f"Error during Gemini API query: {e}")
+            return None
 
+    def start_chat(self, session_id, persona=None, history=None):
+        """
+        Starts a new chat session.
 
-print(PROMPT_TEMPLATE)
-print(PROMPT_TEMPLATE.format(user_query="I want to book an appointment with Dr. Smith for Cardiology next week."))
-# ai_service = AIService()
-# response = ai_service.generate_content("tell me a joke")
-# print(response["candidates"][0]["content"]["parts"][0]["text"])
+        Args:
+            session_id (str): A unique identifier for the chat session (e.g., user ID).
+            persona (str, optional): A system instruction to set the initial persona
+                for this chat session.  Defaults to the class-level
+                system_instruction.
+            history (list, optional): Initial chat history.
+        """
+        effective_persona = persona if persona else self.system_instruction
+        chat = self.model.start_chat(system_instruction=effective_persona, history=history)
+        self.chat_sessions[session_id] = chat
+
+    def send_chat_message(self, session_id, message):
+        """
+        Sends a message to an ongoing chat session.
+
+        Args:
+            session_id (str): The identifier of the chat session.
+            message (str): The user's message.
+
+        Returns:
+            str: The text response from the Gemini API, or None on error or if
+                the session doesn't exist.
+        """
+        if session_id not in self.chat_sessions:
+            print(f"Error: Chat session '{session_id}' not found.")
+            return None
+        try:
+            response = self.chat_sessions[session_id].send_message(message)
+            return response.text
+        except Exception as e:
+            print(f"Error during Gemini API chat message: {e}")
+            return None
+
+    def get_chat_history(self, session_id):
+        """
+        Retrieves the message history for a given chat session.
+
+        Args:
+            session_id (str): The identifier of the chat session.
+
+        Returns:
+            list: A list of message turns (dicts with 'role' and 'parts'),
+            or None if the session doesn't exist.
+        """
+        if session_id not in self.chat_sessions:
+            print(f"Error: Chat session '{session_id}' not found.")
+            return None
+
+        history = []
+        for turn in self.chat_sessions[session_id].history:
+            history.append({"role": turn.role, "parts": turn.parts})
+        return history
+
+    def end_chat(self, session_id):
+        """
+        Ends a chat session and removes it from the active sessions.
+
+        Args:
+            session_id (str): The identifier of the chat session to end.
+        """
+        if session_id in self.chat_sessions:
+            del self.chat_sessions[session_id]
+        else:
+            print(f"Warning: Chat session '{session_id}' not found.")
+
+    def clear_all_chats(self):
+        """Clears all active chat sessions."""
+        self.chat_sessions.clear()
