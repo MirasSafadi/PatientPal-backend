@@ -30,14 +30,7 @@ class GeminiAPIWrapper:
         self.username = username  # Optional username for user-specific sessions
         self.chat_sessions = {}  # To store chat history per session
 
-    def query(
-        self,
-        prompt,
-        context=None,
-        persona=None,
-        generation_config=None,
-        format_spec=None  # Added format_spec
-    ):
+    def query(self, prompt, context=None, persona=None, generation_config=None, format_spec=None):  # Added format_spec
         """
         Sends a query to the Gemini API.
 
