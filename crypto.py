@@ -4,7 +4,7 @@ This module will contain the functions for encrypting and decrypting data.
 """
 from functools import wraps
 from flask import jsonify, request
-from flask_socketio import emit, disconnect
+from flask_socketio import emit
 import jwt, settings, utils
 from logger import Logger
 from mongodb_interface import MongoDBInterface
@@ -35,7 +35,6 @@ def auth_required(func):
             logger.debug("Token is invalid or expired")
             if is_socketio:
                 emit('error', {"error": "Invalid or expired token"}, broadcast=False)
-                disconnect()
                 return
             else:
                 return jsonify({"error": "Invalid or expired token"}), 498
@@ -48,7 +47,6 @@ def auth_required(func):
             logger.debug("User not found in the database")
             if is_socketio:
                 emit('error', {"error": "Not Found: No such user"}, broadcast=False)
-                disconnect()
                 return
             else:
                 return jsonify({"error": "Not Found: No such user"}), 404
@@ -58,7 +56,6 @@ def auth_required(func):
             logger.debug("Token does not match the stored hashed token")
             if is_socketio:
                 emit('error', {"error": "Unauthorized"}, broadcast=False)
-                disconnect()
                 return
             else:
                 logger.debug("Token does not match the stored hashed token")
