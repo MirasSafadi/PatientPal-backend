@@ -1,9 +1,10 @@
-from flask import jsonify, request 
+from flask import Flask , request , jsonify
 from crypto import auth_required, generate_token
 from mongodb_interface import MongoDBInterface
 from logger import Logger
 from app import flask_app, bcrypt
-import utils
+import os, re, utils, settings, smtplib
+from email.message import EmailMessage
 
 # Initialize database connection
 db_instance = MongoDBInterface()
