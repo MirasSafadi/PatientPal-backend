@@ -37,6 +37,7 @@ def register():
     email = data.get('email', '').strip().lower()
     password = data.get('password')
     confirm_password = data.get('confirm_password')
+    id_number=data.get('id_number')
 
     # Optional profile fields
     first_name = data.get('first_name', '').strip()
