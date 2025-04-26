@@ -1,5 +1,7 @@
+from email import message
 from flask import Flask , request , jsonify
 from crypto import auth_required, generate_token
+import crypto
 from mongodb_interface import MongoDBInterface
 from logger import Logger
 from app import flask_app, bcrypt
@@ -128,7 +130,7 @@ def login():
 
         logger.debug(f"Login attempt with username: {username}")
 
-        # חיפוש המשתמש במסד הנתונים
+        # get user from db
         user = db_instance.get_document("users", {"username": username})
 
         if user is not None:
@@ -136,7 +138,7 @@ def login():
                 logger.info(f"User '{username}' logged in successfully.")
                 token = generate_token({"username": username, "hashed_password": user.get("password")})
                 
-                # 🔒 hash the token and save in db
+                # hash the token and save in db
                 hashed_token = bcrypt.generate_password_hash(token).decode('utf-8')
                 db_instance.update_document("users", {"username": username}, {"session_token": hashed_token})
 
@@ -144,5 +146,15 @@ def login():
 
         logger.warning(f"User '{username}' login attempt failed.")
         return jsonify({"message": "login attempt failed."}), 404
-
     return jsonify({"error": "Wrong method"}), 405
+
+@flask_app.route('/validate_token', methods=['POST'])
+def validate_token():
+    logger.debug("Validate token endpoint (/validate_token) called")
+    token = request.form.get('token')
+    if not token:
+        return jsonify({"error": "Token is missing"}), 401
+    
+    is_valid = crypto.validate_token(token)
+    message = "Token is valid" if is_valid else "Token is invalid"
+    return jsonify({"message": message}), 200
