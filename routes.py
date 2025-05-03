@@ -89,6 +89,7 @@ def register():
         'message': 'A confirmation email has been sent. Please confirm your registration.',
         'code': 200,
     }), 200
+
 @flask_app.route('/confirm/<token>')
 def confirm_registration(token):
     data = utils.confirm_token(token)

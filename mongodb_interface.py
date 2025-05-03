@@ -4,6 +4,7 @@ from pymongo.errors import ConnectionFailure
 from logger import Logger
 import constants
 
+DB_NAME = "PatientPal"
 DB_URL = f"mongodb+srv://{settings.DB_USERNAME}:{settings.DB_PASSWORD}@patientpal.awkaqvw.mongodb.net/?retryWrites=true&w=majority&appName={constants.DB_NAME}"
 logger = Logger("MongoDB")
 
