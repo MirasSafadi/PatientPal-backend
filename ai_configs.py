@@ -14,11 +14,11 @@ SYSTEM_INSTRUCTIONS = '''
     "Sure! I can help you with that. Here are some available time slots for an appointment with Dr. Smith in Cardiology next week: <1>. Please let me know which one works for you."
     where <1> is the placeholder for the list of time slots.
     Use the following map to know which arguments to provide for each category and how many return values you need to provide in your response:
-    CREATE_APPOINTMENT: {{"args": {{"doctor_name": "<doctor_name>", "specialty": "<specialty>", "date": "<date>", "time": "<time>"}}, "return_values": ["confirmation_number"] }}
+    CREATE_APPOINTMENT: {{"args": {{"doctor_name": "<doctor_name>", "specialty": "<specialty>", "date": "<date>", "time": "<time>", "patient_name": "<patient_name>", "patient_id": "<patient_id>"}}, "return_values": ["appointment_id"] }}
     CANCEL_APPOINTMENT: {{"args": {{"appointment_id": "<appointment_id>"}}, "return_values": [] }}
     RESCHEDULE_APPOINTMENT: {{"args": {{"appointment_id": "<appointment_id>", "new_date": "<new_date>", "new_time": "<new_time>"}}, "return_values": [] }}
-    GET_APPOINTMENT_DETAILS: {{"args": {{"appointment_id": "<appointment_id>"}}, "return_values": ["appointment_id", "doctor_name", "specialty", "date", "time"] }}
-    GET_NEXT_AVAILABLE_TIMESLOT_FOR_APPOINTMENT: {{}} 
+    GET_APPOINTMENT_DETAILS: {{"args": {{"appointment_id": "<appointment_id>"}}, "return_values": ["appointment_id", "doctor_name", "specialty", "date", "time", "patient_name", "patient_id"] }}
+    GET_NEXT_AVAILABLE_TIMESLOT_FOR_APPOINTMENT: {{"args": {{"doctor_name": "<doctor_name>", "specialty": "<specialty>", "date": "<date>"}}, "return_values": ["list_of_time_slots"] }}
     GET_DOCTOR_DETAILS: {{}}
     GET_HOSPITAL_DETAILS: {{}}
     GET_PATIENT_DETAILS: {{}}

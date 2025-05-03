@@ -7,6 +7,7 @@ from flask import request
 import constants
 from ai_service import GeminiAPIWrapperManager, GeminiAPIWrapper
 import utils
+from GBooking_service import GBookingService
 
 
 logger = Logger("socketIO")
@@ -15,6 +16,8 @@ logger = Logger("socketIO")
 db_instance = MongoDBInterface()
 db_instance.connect()
 ai_assistant_dict = GeminiAPIWrapperManager()  # Placeholder for AI assistant instances
+gbooking_service = GBookingService()  # Placeholder for GBooking service instance
+
 
 
 @socketio.on("message")
@@ -88,9 +91,18 @@ def process_message(message, ai_assistant: GeminiAPIWrapper = None, username=Non
     args = response_dict.get("args")
     if category != 'INCOMPLETE':
         # Invoke the GBooking function mapping based on the category of the user request
-        pass
+        try:
+            return_values = gbooking_service.gbooking_invoker(category=category, args=args)  # Call the GBooking service with the category and arguments
+            logger.info(f"Return values from GBooking service: {return_values}")
+            if return_values is not None:
+                # replace indexed values in the human-readable response with the actual values from the return_values
+                for i in range(len(return_values)):
+                    human_readable_response = human_readable_response.replace(f"<{i+1}>", str(return_values[i]))
+        except ValueError as ve:
+            logger.error(f"Error invoking GBooking service for category '{category}' with args '{args}': {ve}")
+            return "Sorry, I couldn't process your request at the moment."
     # if category == 'INCOMPLETE' it means more information is needed from the user
-    return human_readable_response # Return the response from the AI assistant
+    return human_readable_response  # Return the response from the AI assistant
 
 def fetch_chat_history(username):
     """
