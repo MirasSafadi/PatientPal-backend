@@ -1,11 +1,52 @@
 import google.generativeai as genai
 import settings
+from ai_configs import SYSTEM_INSTRUCTIONS
+
+class GeminiAPIWrapperManager:
+    """
+    A manager class to handle instances of GeminiAPIWrapper based on the username.
+    """
+    def __init__(self):
+        self.instances = {}  # Dictionary to store instances by username
+
+    def get_instance(self, username):
+        """
+        Returns an instance of GeminiAPIWrapper for the given username.
+
+        Args:
+            username (str): The username for which to get the API wrapper instance.
+
+        Returns:
+            GeminiAPIWrapper: An instance of the GeminiAPIWrapper for the given username.
+        """
+        if username not in self.instances:
+            # Create a new instance if one doesn't already exist for the username
+            self.instances[username] = GeminiAPIWrapper(username=username)
+        return self.instances[username]
+
+    def clear_instance(self, username):
+        """
+        Clears the instance of GeminiAPIWrapper for the given username.
+
+        Args:
+            username (str): The username whose instance should be cleared.
+        """
+        if username in self.instances:
+            del self.instances[username]
+
+    def clear_all_instances(self):
+        """
+        Clears all instances of GeminiAPIWrapper.
+        """
+        self.instances.clear()
+
+
 
 class GeminiAPIWrapper:
     """
     A wrapper class for interacting with the Google Gemini API.
     """
-    def __init__(self, api_key=None, model_name="gemini-pro", system_instruction=None, username=None):
+    def __init__(self, api_key=None, model_name="gemini-1.5-pro-latest", username=None):
         """
         Initializes the GeminiAPIWrapper.
 
@@ -13,7 +54,7 @@ class GeminiAPIWrapper:
             api_key (str, optional): Your Google Gemini API key.
                 Defaults to the 'GEMINI_API_KEY' environment variable.
             model_name (str, optional): The name of the Gemini model to use.
-                Defaults to "gemini-pro".
+                Defaults to "gemini-1.5-pro-latest".
             system_instruction (str, optional): A default system instruction (persona)
                 to use for all queries.  Can be overridden in the query() method.
                 Defaults to None.
@@ -26,13 +67,13 @@ class GeminiAPIWrapper:
             )
         genai.configure(api_key=self.api_key)
         self.model = genai.GenerativeModel(model_name)
-        self.system_instruction = system_instruction  # Default system instruction
+        self.system_instruction = SYSTEM_INSTRUCTIONS  # Default system instruction
         self.username = username  # Optional username for user-specific sessions
         self.chat_sessions = {}  # To store chat history per session
 
     def query(self, prompt, context=None, persona=None, generation_config=None, format_spec=None):  # Added format_spec
         """
-        Sends a query to the Gemini API.
+        Sends an individual query to the Gemini API.
 
         Args:
             prompt (str): The user's query.
@@ -86,8 +127,11 @@ class GeminiAPIWrapper:
             history (list, optional): Initial chat history.
         """
         effective_persona = persona if persona else self.system_instruction
-        chat = self.model.start_chat(system_instruction=effective_persona, history=history)
+        # chat = self.model.start_chat(system_instruction=effective_persona, history=history) # Removed problematic line
+        chat = self.model.start_chat(history=history)
         self.chat_sessions[session_id] = chat
+        if effective_persona: # added this
+            self.chat_sessions[session_id].send_message(effective_persona) # send the persona as the first message
 
     def send_chat_message(self, session_id, message):
         """

@@ -1,4 +1,5 @@
-import constants, jwt, settings
+from math import log
+import constants, jwt, settings, json
 from flask import request, jsonify
 from functools import wraps
 from datetime import datetime, timedelta, timezone
@@ -76,4 +77,40 @@ def confirm_token(token):
     except:
         return False
     return data
+
+def convert_chat_history_to_UI_format(history):
+    if history:
+        return [{"sender": "user" if msg["role"] == "user" else "server", "text": " ".join(msg["parts"])} for msg in history]
+    else:
+        return []
+    
+def clean_bot_response(response):
+    """
+        Clean the bot response by removing unwanted characters and formatting.
+        This function should be called before sending the response to the user.
+    """
+    if response is None:
+        return None
+    logger.debug(f"Raw response: {response}")
+    response = response.replace(r"```json", "") # Remove JSON format specifier
+    response = response.replace(r"```", "") # Remove triple quotes
+    # Remove unwanted characters and format the response
+    # response = re.sub(r'\n+', '\n', response)  # Remove extra newlines
+    # cleaned_response = re.sub(r'\s+', ' ', response).strip()
+    logger.debug(f"Cleaned response: {response}")
+    return response
+
+def return_json_response_as_dict(response):
+    """
+        Convert the JSON response to a dictionary.
+        This function should be called after receiving the response from the bot.
+    """
+    if response is None:
+        return None
+    try:
+        response_dict = json.loads(response)
+        return response_dict
+    except json.JSONDecodeError as e:
+        logger.error(f"Error decoding JSON: {e}")
+        return None
 
