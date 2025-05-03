@@ -1,18 +1,12 @@
-
 from email import message
-from flask import jsonify, request 
+from flask import Flask , request , jsonify
 from crypto import auth_required, generate_token
 import crypto
 from mongodb_interface import MongoDBInterface
 from logger import Logger
 from app import flask_app, bcrypt
-import utils
-import os
-import re
+import os, re, utils, settings, smtplib
 from email.message import EmailMessage
-import settings
-import smtplib
-
 
 # Initialize database connection
 db_instance = MongoDBInterface()
@@ -38,6 +32,7 @@ def register():
     email = data.get('email', '').strip().lower()
     password = data.get('password')
     confirm_password = data.get('confirm_password')
+    id_number=data.get('id_number')
 
     # Optional profile fields
     first_name = data.get('first_name', '').strip()

@@ -1,4 +1,3 @@
-from urllib import response
 from crypto import auth_required
 from mongodb_interface import MongoDBInterface
 from logger import Logger
@@ -56,6 +55,7 @@ def handle_connect():
     logger.debug(f"User {username} connected")
     ai_assistant: GeminiAPIWrapper = ai_assistant_dict.get_instance(username)  # Get the AI assistant instance for the user
     join_room(username)  # Add the user to their specific room
+    logger.info(f"User {username} joined room '{username}'")
     history = fetch_chat_history(username)
     ai_assistant.start_chat(session_id=username, history=history)  # Start a new chat session with the AI assistant
     logger.info(f"User {username} joined room '{username}'")
